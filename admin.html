@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>운수종사자 일상점검 관리자</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#f6f7fb;--panel:#fff;--line:#e8eaf0;--text:#20242d;--muted:#7a8190;--purple:#8b5cf6;--purple2:#f3efff;--green:#20b486;--green2:#eaf9f4;--red:#ef5b73;--red2:#fff0f3;--orange:#f59e0b;--orange2:#fff7e8;--blue:#4f8ff7;--blue2:#eef5ff}
+html,body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,"Malgun Gothic","Noto Sans KR",sans-serif;color:var(--text)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.topbar{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line)}
+.topline{height:72px;display:grid;grid-template-columns:360px 1fr 260px;align-items:center;gap:18px;max-width:1680px;margin:auto;padding:0 24px}
+.identity{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#6d4ce8);display:grid;place-items:center;color:white;font-weight:900;font-size:20px;box-shadow:0 8px 20px #8b5cf633}
+.identity .name{font-size:18px;font-weight:900;white-space:nowrap}
+.identity .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.mainnav{display:flex;justify-content:center;gap:44px;align-self:stretch}
+.mainnav button{border:0;background:transparent;color:#4f5664;font-weight:800;padding:0 4px;position:relative}
+.mainnav button.active{color:var(--purple)}
+.mainnav button.active:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--purple);border-radius:3px 3px 0 0}
+.userbar{display:flex;justify-content:flex-end;align-items:center;gap:10px;font-size:14px}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--purple2);display:grid;place-items:center;color:var(--purple);font-weight:900}
+.ghostbtn,.btn{border:1px solid #dfe2e8;background:#fff;border-radius:9px;padding:9px 12px;font-weight:800;color:#3b4350}
+.btn:hover,.ghostbtn:hover{background:#fafbfc}
+.btn.purple{background:linear-gradient(135deg,#9b67f5,#7c4ee8);border-color:#8b5cf6;color:#fff;box-shadow:0 6px 14px #8b5cf62a}
+.btn.green{background:var(--green2);border-color:#cfeee2;color:#168a69}
+.btn.blue{background:var(--blue2);border-color:#d9e7ff;color:#3d73c8}
+.btn.red{background:var(--red2);border-color:#ffd7df;color:#d7465c}
+.subnav{height:48px;display:flex;align-items:end;gap:34px;max-width:1680px;margin:auto;padding:0 24px;background:#fff}
+.subnav button{height:48px;border:0;background:transparent;color:#747b88;font-weight:800;position:relative;padding:0 2px}
+.subnav button.active{color:var(--purple)}
+.subnav button.active:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--purple)}
+.page{max-width:1680px;margin:auto;padding:20px 24px 40px}
+.hidden{display:none!important}
+.summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.metric{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px 18px;min-height:106px;display:flex;align-items:center;gap:13px;box-shadow:0 8px 22px #1f293708}
+.metricIcon{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;font-weight:900;flex:0 0 auto}
+.metric:nth-child(1) .metricIcon{background:var(--purple2);color:var(--purple)}
+.metric:nth-child(2) .metricIcon{background:var(--green2);color:var(--green)}
+.metric:nth-child(3) .metricIcon{background:var(--red2);color:var(--red)}
+.metric:nth-child(4) .metricIcon{background:var(--blue2);color:var(--blue)}
+.metric:nth-child(5) .metricIcon{background:var(--orange2);color:var(--orange)}
+.metric:nth-child(6) .metricIcon{background:#f2edff;color:#7c4ee8}
+.metricLabel{font-size:13px;color:#707786;font-weight:800} .metric b{display:block;font-size:25px;margin-top:4px;letter-spacing:-.4px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px #11182708;overflow:hidden}
+.panelHead{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:17px 18px;border-bottom:1px solid var(--line)}
+.panelTitle{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:900}
+.panelTitle .sq{width:28px;height:28px;border-radius:8px;background:var(--purple2);color:var(--purple);display:grid;place-items:center;font-size:14px}
+.toolbar{padding:14px 16px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dateGroup{display:flex;gap:6px;align-items:center}
+.dateInput{height:39px;border:1px solid #dfe2e8;border-radius:9px;padding:0 10px;background:#fff;font-weight:800;color:#4a5260}
+.toolbar input[type=text]{height:39px;flex:1;min-width:300px;border:1px solid #dfe2e8;border-radius:9px;padding:0 13px;outline:none}
+.toolbar input[type=text]:focus,.dateInput:focus,select:focus{border-color:#ad8cf7;box-shadow:0 0 0 3px #8b5cf615}
+.filter{border:1px solid #e1e3e9;background:#fff;border-radius:9px;padding:9px 14px;font-weight:800;color:#59616e}
+.filter.on{color:#fff;background:var(--purple);border-color:var(--purple)}
+.bulkbar{margin:0 16px 12px;padding:11px 12px;background:#faf9ff;border:1px solid #eee8ff;border-radius:11px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bulkbar b{color:#464d59} .bulkbar select{height:37px;border:1px solid #dfe2e8;border-radius:9px;padding:0 10px;background:#fff;min-width:270px}
+.muted{color:var(--muted)} .smalltxt{font-size:12px;color:var(--muted)}
+.tableWrap{padding:0 16px 12px;overflow:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:1240px}
+th{font-size:12px;color:#737a88;font-weight:900;background:#f8f9fb;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;position:sticky;top:0;z-index:2}
+th:first-child{border-left:1px solid var(--line);border-radius:10px 0 0 0} th:last-child{border-right:1px solid var(--line);border-radius:0 10px 0 0}
+td{padding:10px 8px;border-bottom:1px solid #eef0f4;font-size:13px;vertical-align:middle;background:#fff}
+tr:hover td{background:#fcfcff}
+.checkcol{width:36px;text-align:center} .checkcol input{width:17px;height:17px;accent-color:var(--purple)}
+.pill{display:inline-flex;align-items:center;justify-content:center;min-width:50px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}
+.pill.good{background:var(--green2);color:#15936d} .pill.pending{background:var(--red2);color:#d94d63} .pill.not_driving{background:var(--blue2);color:#3979d8} .pill.problem{background:var(--orange2);color:#d27a00} .pill.future{background:#f1f3f6;color:#717887}
+#msg{padding:0 16px 8px;font-size:12px}
+.loginCard{max-width:520px;margin:70px auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:0 18px 50px #11182712}
+.loginCard h1{margin:0 0 18px} .field{margin:12px 0} .field label{display:block;font-size:13px;font-weight:900;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #dfe2e8;border-radius:9px;background:#fff}
+.help{background:#fbf8ff;border:1px solid #eee5ff;color:#5d4a85;padding:11px;border-radius:10px;line-height:1.5}
+.warn{background:#fff3f5;border:1px solid #ffd6dd;color:#9c3646;padding:11px;border-radius:10px;line-height:1.5}
+/* drawer / detail */
+.modal{position:fixed;inset:0;background:#11182755;display:none;z-index:50;align-items:stretch;justify-content:flex-end}
+.modal.on{display:flex}
+.box{height:100%;width:min(780px,96vw);background:#fff;padding:0;overflow:auto;box-shadow:-18px 0 50px #11182725}
+.box.sm{width:min(560px,96vw);height:auto;max-height:88vh;margin:auto;border-radius:16px}
+.modalhead{position:sticky;top:0;background:#fff;z-index:6;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.modalhead h2{margin:0;font-size:20px} #memberContent,#smallBody{padding:16px 20px 28px}
+.infoGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px} .info{border:1px solid var(--line);border-radius:11px;padding:10px;background:#fff}
+.info span{font-size:11px;font-weight:900;color:#7a8190} .info b{display:block;margin-top:4px;font-size:14px;word-break:break-word}
+.summary .sum{background:#fff}
+#memberContent .summary{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin:12px 0}
+.sum{border:1px solid var(--line);border-radius:10px;padding:9px;text-align:center} .sum span{font-size:11px;color:#7a8190;font-weight:900} .sum b{display:block;margin-top:3px;font-size:18px}
+.monthbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:14px 0 10px} .monthtitle{font-size:18px;font-weight:950}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fbfcfe}
+.week{font-size:11px;color:#818896;font-weight:900;text-align:center;padding:4px}
+.day{min-height:70px;background:#fff;border:1px solid #e8eaf0;border-radius:9px;padding:7px;position:relative;cursor:pointer}
+.day:hover{border-color:#b9a3f4} .day.selected{outline:2px solid var(--purple)} .day.other{visibility:hidden} .day .n{font-weight:900;font-size:13px}
+.day .st{display:inline-block;margin-top:7px;font-size:10px;font-weight:900;border-radius:999px;padding:3px 6px} .day.good .st{background:var(--green2);color:#178a68} .day.problem .st{background:var(--orange2);color:#bf7600} .day.not_driving .st{background:var(--blue2);color:#3975cf} .day.pending .st{background:var(--red2);color:#d34b61} .day.future .st{background:#f1f3f6;color:#707887}
+.day .src{position:absolute;right:5px;bottom:4px;font-size:9px;color:#9aa0aa}
+.detailgrid{display:grid;grid-template-columns:1.15fr .85fr;gap:10px;margin-top:10px} .panelInner{border:1px solid var(--line);border-radius:11px;padding:12px}
+#memberContent .panel{box-shadow:none;border:1px solid var(--line);border-radius:11px;margin-top:10px} #memberContent .panel h3,.panelInner h3{margin:0 0 9px}
+.change{border:1px solid var(--line);border-radius:9px;padding:9px;margin:6px 0;background:#fcfcfd}
+.daylist{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.daylist table{min-width:720px} .daylist th{position:sticky;top:0}
+@media(max-width:1200px){.topline{grid-template-columns:1fr auto}.mainnav{display:none}.summary{grid-template-columns:repeat(3,1fr)}.infoGrid{grid-template-columns:repeat(2,1fr)}#memberContent .summary{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:760px){.topline{padding:0 12px;height:62px}.identity .name{font-size:15px}.userbar span{display:none}.subnav{padding:0 12px;gap:20px;overflow:auto}.page{padding:12px}.summary{grid-template-columns:repeat(2,1fr)}.toolbar input[type=text]{min-width:100%}.infoGrid{grid-template-columns:1fr}#memberContent .summary{grid-template-columns:repeat(2,1fr)}.detailgrid{grid-template-columns:1fr}.box{width:100vw}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topline">
+    <div class="identity"><div class="logo">▣</div><div><div class="name">강원특별자치도 개인소형화물 협회</div><div class="sub">운수종사자 일상점검 관리 시스템</div></div></div>
+    <nav class="mainnav"><button>대시보드</button><button>회원관리</button><button class="active">일상점검</button><button>수정요청</button><button>통계</button><button>설정</button></nav>
+    <div class="userbar"><div class="avatar">A</div><span>관리자</span><button id="logoutBtn" class="ghostbtn hidden" onclick="logout()">로그아웃</button></div>
+  </div>
+  <div class="subnav"><button class="active">오늘 현황</button><button>월별 현황</button><button>미등록 관리</button><button>문제 차량</button><button>법정점검표</button></div>
+</header>
+
+<main class="page">
+  <section id="login" class="loginCard">
+    <h1>관리자 로그인</h1>
+    <div class="field"><label>이메일</label><input id="email" type="email"></div>
+    <div class="field"><label>비밀번호</label><input id="pw" type="password"></div>
+    <button class="btn purple" style="width:100%;height:44px" onclick="login()">로그인</button>
+    <button class="btn" style="width:100%;height:42px;margin-top:8px" onclick="toggleSetup()">최초 관리자 등록</button>
+    <div id="setup" class="hidden" style="margin-top:12px">
+      <div class="help">처음 한 번만 사용합니다.</div>
+      <div class="field"><label>관리자 이메일</label><input id="se" type="email"></div>
+      <div class="field"><label>관리자 비밀번호 (10자 이상)</label><input id="sp" type="password"></div>
+      <div class="field"><label>최초 등록 코드</label><input id="sc"></div>
+      <button class="btn purple" style="width:100%;height:42px" onclick="bootstrap()">관리자 계정 만들기</button>
+    </div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="summary">
+      <div class="metric"><div class="metricIcon">◎</div><div><div class="metricLabel">전체회원</div><b id="all">0</b></div></div>
+      <div class="metric"><div class="metricIcon">✓</div><div><div class="metricLabel">기준일 완료</div><b id="good">0</b></div></div>
+      <div class="metric"><div class="metricIcon">▤</div><div><div class="metricLabel">미등록</div><b id="pending">0</b></div></div>
+      <div class="metric"><div class="metricIcon">Ⅱ</div><div><div class="metricLabel">미운행</div><b id="off">0</b></div></div>
+      <div class="metric"><div class="metricIcon">△</div><div><div class="metricLabel">이상 있음</div><b id="bad">0</b></div></div>
+      <div class="metric"><div class="metricIcon">▣</div><div><div class="metricLabel">앱 등록</div><b id="registered">0</b></div></div>
+    </div>
+
+    <section class="panel">
+      <div class="panelHead"><div class="panelTitle"><span class="sq">▣</span>회원 일상점검 목록</div><a href="/import" class="btn purple" style="text-decoration:none">회원명부 등록</a></div>
+      <div class="toolbar">
+        <div class="dateGroup"><input id="baseDate" class="dateInput" type="date" onchange="changeBaseDate()"><button class="btn" onclick="moveBaseDate(-1)">전날</button><button class="btn purple" onclick="goToday()">오늘</button><button class="btn" onclick="moveBaseDate(1)">다음날</button></div>
+        <input id="search" type="text" placeholder="성명, 차량번호, 전화번호, 주소, 관리번호 검색" oninput="render()">
+        <button id="fa" class="filter on" onclick="setFilter('all')">전체</button><button id="fp" class="filter" onclick="setFilter('pending')">미등록</button><button id="fb" class="filter" onclick="setFilter('problem')">이상 있음</button>
+        <button class="btn" onclick="loadBaseDate()">새로고침</button>
+      </div>
+      <div class="bulkbar"><input id="checkAll" type="checkbox" onchange="toggleAllVisible(this.checked)"><b>선택회원 일괄등록</b><span id="selCount" class="muted">0명 선택</span><select id="bulkReason"><option value="">입력 근거 선택</option><option>기사와 전화 통화 후 실제 점검 완료 확인</option><option>기사 방문 후 실제 점검 완료 확인</option><option>앱 사용이 어려워 직원이 입력 지원</option><option>기존 서면 점검표 확인 후 시스템에 입력</option></select><button class="btn green" onclick="bulkMembers('good')">✓ 전체 양호</button><button class="btn blue" onclick="bulkMembers('not_driving')">Ⅱ 미운행</button></div>
+      <div id="msg" class="muted"></div>
+      <div class="tableWrap"><table><thead><tr><th class="checkcol"></th><th>기사</th><th>차량번호</th><th>휴대폰</th><th>집주소</th><th>지역/구분</th><th>앱등록</th><th>기준일 상태</th><th>확인시간</th><th>관리</th></tr></thead><tbody id="tbody"></tbody></table></div>
+    </section>
+  </section>
+</main>
+
+<div id="memberModal" class="modal"><div class="box"><div class="modalhead"><div><h2 id="memberTitle">회원 상세 / 점검 이력</h2><div id="memberSub" class="muted"></div></div><button class="btn" onclick="closeMember()">닫기</button></div><div id="memberContent"></div></div></div>
+<div id="smallModal" class="modal"><div class="box sm"><div class="modalhead"><h2 id="smallTitle"></h2><button class="btn" onclick="closeSmall()">닫기</button></div><div id="smallBody"></div></div></div>
+<script>
+const BASE='https://oqijoxllslsohxkyrkif.supabase.co';
+const KEY='sb_publishable_8ns8LXmy8FP-LF0zbmqzVA_7ykNgMi6';
+const STORE='daily_check_session_v4';
+const ITEMS=[
+'번호판, 전면유리, 후사경 등의 청결상태',
+'후미등, 차폭등 등 등화장치 작동상태',
+'창닦이기 작동상태',
+'적재함(보조지지대 포함), 측면 보호대, 후부반사판, 트레일러 연결장치의 부착 상태 및 훼손 여부',
+'타이어 손상 및 마모(1.6㎜이상) 여부',
+'화물, 적재함 지지대(판스프링) 등의 고정상태',
+'바퀴 너트 등 균열 여부',
+'냉각수, 공기압, 엔진오일 등 차량 이상 여부(계기판 확인)',
+'좌석안전띠 상태',
+'소화기 비치 여부',
+'안전삼각대 등 비치 여부'
+];
+
+let session=null, me=null, members=[], profiles=[], profileByMember=new Map(), dayRows=[], dayMap=new Map(), filter='all', selectedMembers=new Set();
+let currentMember=null, memberRows=[], memberChanges=[], memberActions=[], memberDevices=[], detailYear=null, detailMonth=null, selectedDays=new Set(), selectedDay=null;
+try{session=JSON.parse(localStorage.getItem(STORE)||'null')}catch{}
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+function isoDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function today(){return isoDate(new Date())}
+function parseDate(s){let [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function daysInMonth(y,m){return new Date(y,m,0).getDate()}
+function fmtDate(s){if(!s)return '-';return new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(parseDate(s))}
+function fmtDT(s){return s?new Date(s).toLocaleString('ko-KR'):'-'}
+function resultsGood(){let r={};for(let i=1;i<=11;i++)r[i]='good';return r}
+function isFuture(s){return s>today()}
+function statusText(x,date){if(isFuture(date)&&!x)return '예정';return x==='good'?'완료':x==='problem'?'이상 있음':x==='not_driving'?'미운행':'미등록'}
+function pill(x,date){let c=isFuture(date)&&!x?'future':(x||'pending');return '<span class="pill '+c+'">'+statusText(x,date)+'</span>'}
+
+async function refreshSession(){
+  if(!session?.refresh_token)return false;
+  let r=await fetch(BASE+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})});
+  if(!r.ok)return false;
+  session=await r.json();localStorage.setItem(STORE,JSON.stringify(session));return true;
+}
+async function req(path,opt={}){
+  let h=Object.assign({apikey:KEY},opt.headers||{});
+  if(session?.access_token)h.Authorization='Bearer '+session.access_token;
+  let r=await fetch(BASE+path,Object.assign({},opt,{headers:h}));
+  if(r.status===401&&await refreshSession()){h.Authorization='Bearer '+session.access_token;r=await fetch(BASE+path,Object.assign({},opt,{headers:h}))}
+  return r;
+}
+async function rest(table,q='',opt={}){
+  let r=await req('/rest/v1/'+table+(q?'?'+q:''),opt),j=await r.json().catch(()=>null);
+  if(!r.ok)throw Error(j?.message||j?.hint||'DB 처리 오류');
+  return j;
+}
+async function fetchAll(table,select,extra=''){
+  let out=[],from=0;
+  while(true){
+    let q='select='+encodeURIComponent(select)+(extra?'&'+extra:'');
+    let r=await req('/rest/v1/'+table+'?'+q,{headers:{Range:from+'-'+(from+999)}}),j=await r.json().catch(()=>[]);
+    if(!r.ok)throw Error(j?.message||'조회 실패');
+    out=out.concat(j);if(j.length<1000)break;from+=1000;
+  }
+  return out;
+}
+async function getUser(){let r=await req('/auth/v1/user');return r.ok?r.json():null}
+async function roleOK(){me=await getUser();if(!me)return false;let p=await rest('profiles','user_id=eq.'+me.id+'&select=role');return p[0]?.role==='admin'}
+
+async function login(){
+  try{
+    let r=await fetch(BASE+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value.trim(),password:$('pw').value})}),j=await r.json().catch(()=>({}));
+    if(!r.ok)throw Error(j.error_description||j.message||'로그인 실패');
+    session=j;localStorage.setItem(STORE,JSON.stringify(session));
+    if(!await roleOK())throw Error('관리자 계정이 아닙니다.');
+    enter();
+  }catch(e){alert(e.message)}
+}
+function toggleSetup(){$('setup').classList.toggle('hidden')}
+async function bootstrap(){
+  try{
+    let r=await fetch(BASE+'/functions/v1/vehicle-auth',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({action:'bootstrap-admin',email:$('se').value.trim(),password:$('sp').value,bootstrapCode:$('sc').value.trim()})}),j=await r.json().catch(()=>({}));
+    if(!r.ok)throw Error(j.error||'관리자 등록 실패');
+    session=j.session;localStorage.setItem(STORE,JSON.stringify(session));await enter();
+  }catch(e){alert(e.message)}
+}
+async function enter(){
+  if(!await roleOK())return;
+  $('login').classList.add('hidden');$('app').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');
+  $('baseDate').value=today();
+  await loadCore();
+  await loadBaseDate();
+}
+async function loadCore(){
+  $('msg').textContent='회원정보 불러오는 중...';
+  [members,profiles]=await Promise.all([
+    fetchAll('members','id,driver_name,vehicle_number,phone,home_address,operator_name,management_number,region,member_category,active,created_at','active=eq.true&order=driver_name.asc'),
+    fetchAll('profiles','user_id,role,member_id,created_at','role=eq.driver')
+  ]);
+  profileByMember=new Map(profiles.filter(x=>x.member_id).map(x=>[x.member_id,x]));
+  $('registered').textContent=profileByMember.size.toLocaleString();
+}
+async function loadBaseDate(){
+  const date=$('baseDate').value||today();
+  $('msg').textContent=fmtDate(date)+' 상태 불러오는 중...';
+  dayRows=await fetchAll('inspections','member_id,inspection_date,overall_status,results,action_note,detail_memo,input_source,checked_at','inspection_date=eq.'+date);
+  dayMap=new Map(dayRows.map(x=>[x.member_id,x]));
+  selectedMembers.clear();$('checkAll').checked=false;updateSelCount();
+  cards();render();$('msg').textContent=members.length.toLocaleString()+'명 · 기준일 '+fmtDate(date);
+}
+function changeBaseDate(){loadBaseDate()}
+function moveBaseDate(n){let d=parseDate($('baseDate').value||today());d.setDate(d.getDate()+n);$('baseDate').value=isoDate(d);loadBaseDate()}
+function goToday(){$('baseDate').value=today();loadBaseDate()}
+function state(m){return dayMap.get(m.id)?.overall_status||null}
+function cards(){
+  let g=0,b=0,o=0;
+  members.forEach(m=>{let x=state(m);if(x==='good')g++;else if(x==='problem')b++;else if(x==='not_driving')o++});
+  $('all').textContent=members.length.toLocaleString();$('good').textContent=g;$('bad').textContent=b;$('off').textContent=o;$('pending').textContent=(members.length-g-b-o).toLocaleString();
+}
+function setFilter(x){filter=x;$('fa').classList.toggle('on',x==='all');$('fp').classList.toggle('on',x==='pending');$('fb').classList.toggle('on',x==='problem');render()}
+function visibleMembers(){
+  let q=$('search').value.trim().toLowerCase();
+  return members.filter(m=>{
+    let match=!q||[m.driver_name,m.vehicle_number,m.phone,m.home_address,m.operator_name,m.management_number,m.region,m.member_category].join(' ').toLowerCase().includes(q);
+    if(!match)return false;
+    let x=state(m);
+    if(filter==='pending')return !x;
+    if(filter==='problem')return x==='problem';
+    return true;
+  });
+}
+function render(){
+  let date=$('baseDate').value||today(),a=visibleMembers();
+  $('tbody').innerHTML=a.map(m=>{
+    let r=dayMap.get(m.id),x=r?.overall_status||null,reg=profileByMember.has(m.id);
+    return '<tr>'+
+      '<td class="checkcol"><input class="rowChk" data-id="'+m.id+'" type="checkbox" '+(selectedMembers.has(m.id)?'checked':'')+' onchange="toggleMember(\''+m.id+'\',this.checked)"></td>'+
+      '<td><b>'+esc(m.driver_name)+'</b><br><span class="muted">'+esc(m.operator_name||'')+'</span></td>'+
+      '<td>'+esc(m.vehicle_number)+'</td>'+
+      '<td>'+esc(m.phone||'-')+'</td>'+
+      '<td>'+esc(m.home_address||'-')+'</td>'+
+      '<td>'+esc(m.region||'-')+' / '+esc(m.member_category||'-')+'</td>'+
+      '<td>'+(reg?'<span class="pill good">등록</span>':'<span class="pill pending">미등록</span>')+'</td>'+
+      '<td>'+pill(x,date)+'</td>'+
+      '<td>'+(r?fmtDT(r.checked_at):'-')+'</td>'+
+      '<td><button class="btn dark" onclick="openMember(\''+m.id+'\')">상세/이력</button> <button class="btn" onclick="resetPin(\''+m.id+'\')">비밀번호 초기화</button></td>'+
+      '</tr>'
+  }).join('');
+  updateSelCount();
+}
+function toggleMember(id,on){on?selectedMembers.add(id):selectedMembers.delete(id);updateSelCount()}
+function toggleAllVisible(on){visibleMembers().forEach(m=>on?selectedMembers.add(m.id):selectedMembers.delete(m.id));render()}
+function updateSelCount(){$('selCount').textContent=selectedMembers.size.toLocaleString()+'명 선택'}
+async function bulkMembers(status){
+  const date=$('baseDate').value||today();
+  if(isFuture(date))return alert('미래 날짜는 조회만 가능합니다. 실제 점검 전에는 등록할 수 없습니다.');
+  const reason=$('bulkReason').value;
+  if(!reason)return alert('입력 근거를 선택하세요.');
+  if(!selectedMembers.size)return alert('회원을 선택하세요.');
+  const targets=[...selectedMembers].filter(id=>!dayMap.has(id));
+  if(!targets.length)return alert('선택한 회원은 기준일에 모두 기록이 있습니다.');
+  if(!confirm(fmtDate(date)+' 미등록 '+targets.length+'명을 '+(status==='good'?'전체 양호':'미운행')+'로 일괄등록할까요?\n기존 기록은 덮어쓰지 않습니다.'))return;
+  const now=new Date().toISOString(),res=resultsGood();
+  for(let i=0;i<targets.length;i+=250){
+    let ids=targets.slice(i,i+250);
+    let rows=ids.map(id=>({member_id:id,inspection_date:date,overall_status:status,results:status==='good'?res:{},input_source:'admin_support',checked_at:now,detail_memo:reason}));
+    await rest('inspections','on_conflict=member_id,inspection_date',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},body:JSON.stringify(rows)});
+    let logs=ids.map(id=>({member_id:id,admin_user_id:me.id,action_type:'bulk_admin_support_inspection',detail:{inspection_date:date,status,reason}}));
+    await rest('admin_action_logs','',{method:'POST',headers:{Prefer:'return=minimal','Content-Type':'application/json'},body:JSON.stringify(logs)});
+  }
+  alert(targets.length+'명 일괄등록 완료');await loadBaseDate();
+}
+async function resetPin(id){
+  let m=members.find(x=>x.id===id);if(!confirm(m.driver_name+' 기사님의 비밀번호를 초기화할까요?'))return;
+  let r=await req('/functions/v1/admin-tools',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset-driver',memberId:id,reason:'관리자 화면 초기화'})}),j=await r.json().catch(()=>({}));
+  if(!r.ok)return alert(j.error||'초기화 실패');alert('초기화되었습니다.');await loadCore();render();
+}
+
+async function openMember(id){
+  currentMember=members.find(x=>x.id===id);if(!currentMember)return;
+  $('memberTitle').textContent=currentMember.driver_name+' · '+currentMember.vehicle_number;
+  $('memberSub').textContent='회원별 점검 장부';
+  $('memberContent').innerHTML='<div class="help">점검 이력을 불러오는 중입니다.</div>';
+  $('memberModal').classList.add('on');
+  const base=parseDate($('baseDate').value||today());detailYear=base.getFullYear();detailMonth=base.getMonth()+1;selectedDays.clear();selectedDay=$('baseDate').value||today();
+  try{
+    [memberRows,memberChanges,memberActions,memberDevices]=await Promise.all([
+      fetchAll('inspections','id,member_id,inspection_date,overall_status,results,action_note,detail_memo,input_source,checked_at,created_at,updated_at','member_id=eq.'+id+'&order=inspection_date.asc'),
+      fetchAll('member_change_logs','id,member_id,changed_at,before_data,after_data,memo,change_source','member_id=eq.'+id+'&order=changed_at.desc&limit=100'),
+      fetchAll('admin_action_logs','id,member_id,admin_user_id,action_type,detail,created_at','member_id=eq.'+id+'&order=created_at.desc&limit=100'),
+      fetchAll('member_devices','id,member_id,device_label,active,registered_at,last_seen_at','member_id=eq.'+id+'&order=registered_at.desc')
+    ]);
+    renderMember();
+  }catch(e){$('memberContent').innerHTML='<div class="warn">오류: '+esc(e.message)+'</div>'}
+}
+function closeMember(){$('memberModal').classList.remove('on')}
+function closeSmall(){$('smallModal').classList.remove('on')}
+function openSmall(t,b){$('smallTitle').textContent=t;$('smallBody').innerHTML=b;$('smallModal').classList.add('on')}
+
+function memberRowMap(){return new Map(memberRows.map(r=>[r.inspection_date,r]))}
+function monthKey(y,m){return y+'-'+String(m).padStart(2,'0')}
+function monthRows(){let k=monthKey(detailYear,detailMonth);return memberRows.filter(r=>r.inspection_date.startsWith(k))}
+function elapsedInMonth(y,m){
+  let t=parseDate(today()),last=daysInMonth(y,m);
+  if(y<t.getFullYear()||(y===t.getFullYear()&&m<t.getMonth()+1))return last;
+  if(y===t.getFullYear()&&m===t.getMonth()+1)return t.getDate();
+  return 0;
+}
+function moveDetailMonth(n){detailMonth+=n;if(detailMonth<1){detailMonth=12;detailYear--}if(detailMonth>12){detailMonth=1;detailYear++}selectedDays.clear();selectedDay=null;renderMember()}
+function jumpDetailDate(){
+  let v=$('jumpDate').value;if(!v)return;let d=parseDate(v);detailYear=d.getFullYear();detailMonth=d.getMonth()+1;selectedDay=v;selectedDays.clear();renderMember();setTimeout(()=>showDay(v),20)
+}
+function renderMember(){
+  let m=currentMember,reg=profileByMember.get(m.id),rows=monthRows(),map=memberRowMap(),last=daysInMonth(detailYear,detailMonth),elapsed=elapsedInMonth(detailYear,detailMonth);
+  let pastRows=rows.filter(r=>r.inspection_date<=today()),registeredPast=pastRows.length,missing=Math.max(0,elapsed-registeredPast);
+  let g=rows.filter(r=>r.overall_status==='good').length,o=rows.filter(r=>r.overall_status==='not_driving').length,b=rows.filter(r=>r.overall_status==='problem').length;
+  let rate=elapsed?Math.round(registeredPast/elapsed*100):0;
+  let allPast=memberRows.filter(r=>r.inspection_date<=today()),first=allPast[0]?.inspection_date||'-',recent=allPast[allPast.length-1]?.inspection_date||'-';
+  let totalGood=memberRows.filter(r=>r.overall_status==='good').length,totalOff=memberRows.filter(r=>r.overall_status==='not_driving').length,totalBad=memberRows.filter(r=>r.overall_status==='problem').length;
+  let missDays=[];for(let d=1;d<=elapsed;d++){let s=monthKey(detailYear,detailMonth)+'-'+String(d).padStart(2,'0');if(!map.has(s))missDays.push(d)}
+  let dev=memberDevices[0];
+
+  let html=
+  '<div class="infoGrid">'+
+    info('성명',m.driver_name)+info('차량번호',m.vehicle_number)+info('휴대폰',m.phone||'-')+info('운송사업자명',m.operator_name||'-')+
+    info('집주소',m.home_address||'-')+info('관리번호',m.management_number||'-')+info('지역 / 구분',(m.region||'-')+' / '+(m.member_category||'-'))+
+    info('앱 등록상태',reg?'등록됨 · '+fmtDT(reg.created_at):'미등록')+
+    info('기기정보',dev?(dev.device_label||'등록기기')+' / '+(dev.active?'사용중':'해제'):'기기등록 없음')+
+    info('마지막 기기접속',dev?.last_seen_at?fmtDT(dev.last_seen_at):'-')+info('최초 점검일',first)+info('최근 점검일',recent)+
+  '</div>'+
+  '<div class="summary">'+
+    sum('월 경과일',elapsed+'일')+sum('등록일수',registeredPast+'일')+sum('미등록일수',missing+'일')+sum('등록률',rate+'%')+sum('정상',g+'일')+sum('미운행',o+'일')+sum('이상',b+'일')+
+  '</div>'+
+  '<div class="help"><b>'+detailYear+'년 '+detailMonth+'월 미등록일:</b> '+(missDays.length?missDays.join(', ')+'일':'없음')+
+  '<br><span class="smalltxt">미래 날짜는 조회할 수 있지만 점검 전 사전등록은 막혀 있습니다. 과거 날짜를 관리자가 입력하면 입력시각과 근거가 별도 로그로 남습니다.</span></div>'+
+  '<div class="monthbar"><div><button class="btn" onclick="moveDetailMonth(-1)">◀ 이전 달</button> <button class="btn" onclick="moveDetailMonth(1)">다음 달 ▶</button></div>'+
+    '<div class="monthtitle">'+detailYear+'년 '+detailMonth+'월</div>'+
+    '<div><input id="jumpDate" type="date" value="'+(selectedDay||$('baseDate').value||today())+'" style="padding:9px;border:1px solid #bbb;border-radius:9px"> <button class="btn yellow" onclick="jumpDetailDate()">날짜 바로가기</button></div></div>'+
+  calendarHTML(detailYear,detailMonth,map)+
+  '<div class="bulkbar"><b>이 회원 날짜 일괄등록</b><span id="daySelCount">'+selectedDays.size+'일 선택</span>'+
+    '<button class="btn" onclick="selectElapsedDays()">경과일 전체선택</button><button class="btn" onclick="clearDays()">선택해제</button>'+
+    '<select id="memberBulkReason"><option value="">입력 근거 선택</option><option>기사와 전화 통화 후 실제 점검 완료 확인</option><option>기사 방문 후 실제 점검 완료 확인</option><option>앱 사용이 어려워 직원이 입력 지원</option><option>기존 서면 점검표 확인 후 시스템에 입력</option></select>'+
+    '<button class="btn yellow" onclick="bulkMemberDays(\'good\')">선택 미등록일 전체 양호</button><button class="btn" onclick="bulkMemberDays(\'not_driving\')">선택 미등록일 미운행</button></div>'+
+  '<div class="detailgrid">'+
+    '<div class="panel"><h3>날짜별 상세</h3><div id="dayDetail">'+dayDetailHTML(selectedDay,map)+'</div></div>'+
+    '<div class="panel"><h3>누적 이력</h3><div class="infoGrid" style="grid-template-columns:repeat(2,1fr)">'+info('누적 등록',memberRows.length+'일')+info('누적 정상',totalGood+'일')+info('누적 미운행',totalOff+'일')+info('누적 이상',totalBad+'일')+'</div></div>'+
+  '</div>'+
+  '<div class="card" style="box-shadow:none;border:1px solid #ddd"><h3>이 달 전체 날짜</h3>'+monthTableHTML(detailYear,detailMonth,map)+'</div>'+
+  '<div class="detailgrid">'+
+    '<div class="panel"><h3>회원정보 수정 이력</h3>'+changesHTML()+'</div>'+
+    '<div class="panel"><h3>관리자 처리 이력</h3>'+actionsHTML()+'</div>'+
+  '</div>';
+  $('memberContent').innerHTML=html;
+}
+function info(k,v){return '<div class="info"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>'}
+function sum(k,v){return '<div class="sum"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>'}
+function calendarHTML(y,m,map){
+  let first=new Date(y,m-1,1).getDay(),last=daysInMonth(y,m),cells='';
+  ['일','월','화','수','목','금','토'].forEach(w=>cells+='<div class="week">'+w+'</div>');
+  for(let i=0;i<first;i++)cells+='<div class="day other"></div>';
+  for(let d=1;d<=last;d++){
+    let date=monthKey(y,m)+'-'+String(d).padStart(2,'0'),r=map.get(date),st=r?.overall_status||null,c=isFuture(date)&&!r?'future':(st||'pending');
+    cells+='<div class="day '+c+(selectedDays.has(date)?' selected':'')+'" onclick="dayClick(\''+date+'\')"><div class="n">'+d+'</div><div class="st">'+statusText(st,date)+'</div><div class="src">'+(r?(r.input_source==='admin_support'?'관리자':'기사'):'')+'</div></div>';
+  }
+  return '<div class="calendar">'+cells+'</div>';
+}
+function dayClick(date){
+  selectedDay=date;
+  if(selectedDays.has(date))selectedDays.delete(date);else selectedDays.add(date);
+  renderMember();
+  setTimeout(()=>{let el=$('dayDetail');if(el)el.scrollIntoView({block:'nearest'})},10);
+}
+function showDay(date){selectedDay=date;let el=$('dayDetail');if(el)el.innerHTML=dayDetailHTML(date,memberRowMap())}
+function dayDetailHTML(date,map){
+  if(!date)return '<div class="muted">달력에서 날짜를 누르면 상세가 표시됩니다.</div>';
+  let r=map.get(date);
+  if(!r)return '<div class="'+(isFuture(date)?'help':'warn')+'"><b>'+fmtDate(date)+'</b><br>'+(isFuture(date)?'아직 도래하지 않은 날짜입니다.':'점검기록이 없습니다.')+'</div>';
+  let bad=Object.entries(r.results||{}).filter(([,v])=>v==='bad').map(([k])=>Number(k)+'. '+(ITEMS[Number(k)-1]||'')).join('<br>');
+  return '<div><b>'+fmtDate(date)+'</b> '+pill(r.overall_status,date)+
+    '<p><b>입력주체:</b> '+(r.input_source==='admin_support'?'관리자 지원입력':'기사 직접입력')+'</p>'+
+    '<p><b>실제 입력시각:</b> '+fmtDT(r.checked_at)+'</p>'+
+    '<p><b>이상항목:</b><br>'+(bad||'없음')+'</p>'+
+    '<p><b>조치내용:</b> '+esc(r.action_note||'-')+'</p>'+
+    '<p><b>상세메모:</b> '+esc(r.detail_memo||'-')+'</p></div>';
+}
+function selectElapsedDays(){
+  let e=elapsedInMonth(detailYear,detailMonth);selectedDays.clear();
+  for(let d=1;d<=e;d++)selectedDays.add(monthKey(detailYear,detailMonth)+'-'+String(d).padStart(2,'0'));
+  renderMember();
+}
+function clearDays(){selectedDays.clear();renderMember()}
+async function bulkMemberDays(status){
+  let reason=$('memberBulkReason')?.value||'';
+  if(!reason)return alert('입력 근거를 선택하세요.');
+  if(!selectedDays.size)return alert('날짜를 선택하세요.');
+  let map=memberRowMap(),dates=[...selectedDays].sort().filter(d=>!isFuture(d)&&!map.has(d));
+  let future=[...selectedDays].filter(isFuture).length,existing=[...selectedDays].filter(d=>map.has(d)).length;
+  if(!dates.length)return alert('등록할 수 있는 미등록 경과일이 없습니다.\n미래일 '+future+'개, 기존기록 '+existing+'개는 제외됩니다.');
+  if(!confirm(currentMember.driver_name+'님의 '+dates.length+'개 미등록일을 '+(status==='good'?'전체 양호':'미운행')+'로 등록할까요?\n기존 기록과 미래일은 건드리지 않습니다.'))return;
+  let now=new Date().toISOString(),res=resultsGood();
+  for(let i=0;i<dates.length;i+=200){
+    let ds=dates.slice(i,i+200);
+    let rows=ds.map(date=>({member_id:currentMember.id,inspection_date:date,overall_status:status,results:status==='good'?res:{},input_source:'admin_support',checked_at:now,detail_memo:reason}));
+    await rest('inspections','on_conflict=member_id,inspection_date',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},body:JSON.stringify(rows)});
+  }
+  await rest('admin_action_logs','',{method:'POST',headers:{Prefer:'return=minimal','Content-Type':'application/json'},body:JSON.stringify({member_id:currentMember.id,admin_user_id:me.id,action_type:'member_multi_day_admin_support',detail:{dates,status,reason}})});
+  alert(dates.length+'일 등록 완료');
+  await reopenMemberData();
+}
+async function reopenMemberData(){
+  let id=currentMember.id;
+  [memberRows,memberChanges,memberActions,memberDevices]=await Promise.all([
+    fetchAll('inspections','id,member_id,inspection_date,overall_status,results,action_note,detail_memo,input_source,checked_at,created_at,updated_at','member_id=eq.'+id+'&order=inspection_date.asc'),
+    fetchAll('member_change_logs','id,member_id,changed_at,before_data,after_data,memo,change_source','member_id=eq.'+id+'&order=changed_at.desc&limit=100'),
+    fetchAll('admin_action_logs','id,member_id,admin_user_id,action_type,detail,created_at','member_id=eq.'+id+'&order=created_at.desc&limit=100'),
+    fetchAll('member_devices','id,member_id,device_label,active,registered_at,last_seen_at','member_id=eq.'+id+'&order=registered_at.desc')
+  ]);
+  selectedDays.clear();renderMember();await loadBaseDate();
+}
+function monthTableHTML(y,m,map){
+  let last=daysInMonth(y,m),rows='';
+  for(let d=1;d<=last;d++){
+    let date=monthKey(y,m)+'-'+String(d).padStart(2,'0'),r=map.get(date);
+    rows+='<tr><td>'+date+'</td><td>'+pill(r?.overall_status||null,date)+'</td><td>'+(r?(r.input_source==='admin_support'?'관리자 지원':'기사 직접'):'-')+'</td><td>'+(r?fmtDT(r.checked_at):'-')+'</td><td>'+esc(r?.action_note||'')+'</td><td>'+esc(r?.detail_memo||'')+'</td><td><button class="btn" onclick="showDay(\''+date+'\')">보기</button></td></tr>';
+  }
+  return '<div class="daylist"><table><thead><tr><th>날짜</th><th>상태</th><th>입력</th><th>입력시각</th><th>조치</th><th>메모</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function changesHTML(){
+  if(!memberChanges.length)return '<div class="muted">수정 이력이 없습니다.</div>';
+  return memberChanges.slice(0,40).map(c=>'<div class="change"><b>'+fmtDT(c.changed_at)+'</b> <span class="muted">'+esc(c.change_source||'')+'</span><br><small>'+esc(JSON.stringify(c.before_data||{}))+' → '+esc(JSON.stringify(c.after_data||{}))+'</small>'+(c.memo?'<br>'+esc(c.memo):'')+'</div>').join('');
+}
+function actionsHTML(){
+  if(!memberActions.length)return '<div class="muted">관리자 처리 이력이 없습니다.</div>';
+  return memberActions.slice(0,40).map(a=>'<div class="change"><b>'+fmtDT(a.created_at)+'</b><br>'+esc(a.action_type)+'<br><small>'+esc(JSON.stringify(a.detail||{}))+'</small></div>').join('');
+}
+async function logout(){try{await req('/auth/v1/logout',{method:'POST'})}catch{}localStorage.removeItem(STORE);location.reload()}
+(async()=>{if(session&&await roleOK())enter()})();
+</script>
+</body>
+</html>
