@@ -185,7 +185,7 @@ function parseDate(s){let [y,m,d]=s.split('-').map(Number);return new Date(y,m-1
 function daysInMonth(y,m){return new Date(y,m,0).getDate()}
 function fmtDate(s){if(!s)return '-';return new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(parseDate(s))}
 function fmtDT(s){return s?new Date(s).toLocaleString('ko-KR'):'-'}
-function resultsGood(){let r={};for(let i=1;i<=11;i++)r[i]='good';return r}
+function resultsFor(status){let r={};for(let i=1;i<=11;i++)r[i]=status==='not_driving'?'not_driving':'good';return r}
 function isFuture(s){return s>today()}
 function statusText(x,date){if(isFuture(date)&&!x)return '예정';return x==='good'?'완료':x==='problem'?'이상 있음':x==='not_driving'?'미운행':'미등록'}
 function pill(x,date){let c=isFuture(date)&&!x?'future':(x||'pending');return '<span class="pill '+c+'">'+statusText(x,date)+'</span>'}
@@ -208,15 +208,21 @@ async function rest(table,q='',opt={}){
   if(!r.ok)throw Error(j?.message||j?.hint||'DB 처리 오류');
   return j;
 }
-async function fetchAll(table,select,extra=''){
+async function fetchAll(table,select,extra='',key='id'){
   let out=[],from=0;
+  // Range 페이징 중 순서가 흔들리지 않도록 고유키(key)를 마지막 정렬 기준으로 항상 붙인다.
+  const ord=/(^|&)order=[^&]*/.test(extra)?extra.replace(/(^|&)(order=[^&]*)/,(m,a,b)=>a+b+','+key+'.asc'):(extra?extra+'&':'')+'order='+key+'.asc';
   while(true){
-    let q='select='+encodeURIComponent(select)+(extra?'&'+extra:'');
+    let q='select='+encodeURIComponent(select)+'&'+ord;
     let r=await req('/rest/v1/'+table+'?'+q,{headers:{Range:from+'-'+(from+999)}}),j=await r.json().catch(()=>[]);
     if(!r.ok)throw Error(j?.message||'조회 실패');
     out=out.concat(j);if(j.length<1000)break;from+=1000;
   }
   return out;
+}
+async function insertInspections(rows){
+  // 기존 점검기록은 절대 덮어쓰지 않는다(ignore-duplicates). 실제로 새로 저장된 행만 돌려받는다.
+  return await rest('inspections','on_conflict=member_id,inspection_date&select=member_id,inspection_date',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=representation','Content-Type':'application/json'},body:JSON.stringify(rows)});
 }
 async function getUser(){let r=await req('/auth/v1/user');return r.ok?r.json():null}
 async function roleOK(){me=await getUser();if(!me)return false;let p=await rest('profiles','user_id=eq.'+me.id+'&select=role');return p[0]?.role==='admin'}
@@ -249,7 +255,7 @@ async function loadCore(){
   $('msg').textContent='회원정보 불러오는 중...';
   [members,profiles]=await Promise.all([
     fetchAll('members','id,driver_name,vehicle_number,phone,home_address,operator_name,management_number,region,member_category,active,created_at','active=eq.true&order=driver_name.asc'),
-    fetchAll('profiles','user_id,role,member_id,created_at','role=eq.driver')
+    fetchAll('profiles','user_id,role,member_id,created_at','role=eq.driver','user_id')
   ]);
   profileByMember=new Map(profiles.filter(x=>x.member_id).map(x=>[x.member_id,x]));
   $('registered').textContent=profileByMember.size.toLocaleString();
@@ -314,15 +320,18 @@ async function bulkMembers(status){
   const targets=[...selectedMembers].filter(id=>!dayMap.has(id));
   if(!targets.length)return alert('선택한 회원은 기준일에 모두 기록이 있습니다.');
   if(!confirm(fmtDate(date)+' 미등록 '+targets.length+'명을 '+(status==='good'?'전체 양호':'미운행')+'로 일괄등록할까요?\n기존 기록은 덮어쓰지 않습니다.'))return;
-  const now=new Date().toISOString(),res=resultsGood();
+  const now=new Date().toISOString(),res=resultsFor(status);
+  let inserted=0;
   for(let i=0;i<targets.length;i+=250){
     let ids=targets.slice(i,i+250);
-    let rows=ids.map(id=>({member_id:id,inspection_date:date,overall_status:status,results:status==='good'?res:{},input_source:'admin_support',checked_at:now,detail_memo:reason}));
-    await rest('inspections','on_conflict=member_id,inspection_date',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},body:JSON.stringify(rows)});
-    let logs=ids.map(id=>({member_id:id,admin_user_id:me.id,action_type:'bulk_admin_support_inspection',detail:{inspection_date:date,status,reason}}));
-    await rest('admin_action_logs','',{method:'POST',headers:{Prefer:'return=minimal','Content-Type':'application/json'},body:JSON.stringify(logs)});
+    let rows=ids.map(id=>({member_id:id,inspection_date:date,overall_status:status,results:res,input_source:'admin_support',checked_at:now,detail_memo:reason}));
+    let saved=await insertInspections(rows),done=new Set(saved.map(x=>x.member_id));
+    inserted+=done.size;
+    let logs=ids.filter(id=>done.has(id)).map(id=>({member_id:id,admin_user_id:me.id,action_type:'bulk_admin_support_inspection',detail:{inspection_date:date,status,reason}}));
+    if(logs.length)await rest('admin_action_logs','',{method:'POST',headers:{Prefer:'return=minimal','Content-Type':'application/json'},body:JSON.stringify(logs)});
   }
-  alert(targets.length+'명 일괄등록 완료');await loadBaseDate();
+  let skipped=targets.length-inserted;
+  alert(inserted+'명 일괄등록 완료'+(skipped?'\n그 사이 기록이 생긴 '+skipped+'명은 덮어쓰지 않고 건너뛰었습니다.':''));await loadBaseDate();
 }
 async function resetPin(id){
   let m=members.find(x=>x.id===id);if(!confirm(m.driver_name+' 기사님의 비밀번호를 초기화할까요?'))return;
@@ -451,14 +460,16 @@ async function bulkMemberDays(status){
   let future=[...selectedDays].filter(isFuture).length,existing=[...selectedDays].filter(d=>map.has(d)).length;
   if(!dates.length)return alert('등록할 수 있는 미등록 경과일이 없습니다.\n미래일 '+future+'개, 기존기록 '+existing+'개는 제외됩니다.');
   if(!confirm(currentMember.driver_name+'님의 '+dates.length+'개 미등록일을 '+(status==='good'?'전체 양호':'미운행')+'로 등록할까요?\n기존 기록과 미래일은 건드리지 않습니다.'))return;
-  let now=new Date().toISOString(),res=resultsGood();
+  let now=new Date().toISOString(),res=resultsFor(status),savedDates=[];
   for(let i=0;i<dates.length;i+=200){
     let ds=dates.slice(i,i+200);
-    let rows=ds.map(date=>({member_id:currentMember.id,inspection_date:date,overall_status:status,results:status==='good'?res:{},input_source:'admin_support',checked_at:now,detail_memo:reason}));
-    await rest('inspections','on_conflict=member_id,inspection_date',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal','Content-Type':'application/json'},body:JSON.stringify(rows)});
+    let rows=ds.map(date=>({member_id:currentMember.id,inspection_date:date,overall_status:status,results:res,input_source:'admin_support',checked_at:now,detail_memo:reason}));
+    let saved=await insertInspections(rows);
+    savedDates=savedDates.concat(saved.map(x=>x.inspection_date));
   }
-  await rest('admin_action_logs','',{method:'POST',headers:{Prefer:'return=minimal','Content-Type':'application/json'},body:JSON.stringify({member_id:currentMember.id,admin_user_id:me.id,action_type:'member_multi_day_admin_support',detail:{dates,status,reason}})});
-  alert(dates.length+'일 등록 완료');
+  if(savedDates.length)await rest('admin_action_logs','',{method:'POST',headers:{Prefer:'return=minimal','Content-Type':'application/json'},body:JSON.stringify({member_id:currentMember.id,admin_user_id:me.id,action_type:'member_multi_day_admin_support',detail:{dates:savedDates.sort(),status,reason}})});
+  let skipped=dates.length-savedDates.length;
+  alert(savedDates.length+'일 등록 완료'+(skipped?'\n그 사이 기록이 생긴 '+skipped+'일은 덮어쓰지 않고 건너뛰었습니다.':''));
   await reopenMemberData();
 }
 async function reopenMemberData(){

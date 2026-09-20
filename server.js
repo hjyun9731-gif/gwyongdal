@@ -1,6 +1,6 @@
 import http from "node:http";
-import { readFile, stat } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
+import { readFile } from "node:fs/promises";
+import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
@@ -24,7 +24,12 @@ const ROUTES = new Map([
   ["/admin", "admin.html"],
   ["/admin/", "admin.html"],
   ["/import", "import.html"],
-  ["/import/", "import.html"]
+  ["/import/", "import.html"],
+  // 정적 자원 허용 목록: 여기에 없는 경로는 저장소에 파일이 있어도 404 처리한다.
+  ["/manifest.webmanifest", "manifest.webmanifest"],
+  ["/service-worker.js", "service-worker.js"],
+  ["/icon-192.png", "icon-192.png"],
+  ["/icon-512.png", "icon-512.png"]
 ]);
 
 function respond(res, status, body, type, cache = "no-store") {
@@ -65,16 +70,7 @@ const server = http.createServer(async (req, res) => {
       return await fileResponse(ROUTES.get(url.pathname), res);
     }
 
-    const decoded = decodeURIComponent(url.pathname);
-    const safe = normalize(decoded).replace(/^(\.\.[/\\])+/, "").replace(/^[/\\]+/, "");
-    if (!safe || safe.includes("..")) {
-      return respond(res, 400, "Bad Request", "text/plain; charset=utf-8");
-    }
-
-    const full = join(ROOT, safe);
-    const st = await stat(full);
-    if (!st.isFile()) throw Object.assign(new Error("not found"), { code: "ENOENT" });
-    return await fileResponse(safe, res);
+    return respond(res, 404, "Not Found", "text/plain; charset=utf-8");
   } catch (err) {
     if (err?.code === "ENOENT") {
       return respond(res, 404, "Not Found", "text/plain; charset=utf-8");
